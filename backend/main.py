@@ -412,6 +412,15 @@ def generar_reporte_pdf(rut: str):
         nivel_psicologico = riesgo["NivelRiesgoPsicologico"]
         nivel_interseccional = riesgo["NivelRiesgoInterseccional"]
 
+    # 🔎 Recomendación psicológica
+    query_recomendacion_psico = """
+        SELECT Acciones
+        FROM Recomendaciones
+        WHERE TipoRiesgo = 'Psicológico' AND NivelRiesgo = ?
+    """
+    df_recomendacion_psico = pd.read_sql(query_recomendacion_psico, conn, params=[nivel_psicologico])
+    recomendacion_psico = df_recomendacion_psico.iloc[0]['Acciones'] if not df_recomendacion_psico.empty else "Sin recomendaciones"
+
     # 3️⃣ Notas del estudiante
     query_notas = """
         SELECT [Denominación Actividad Curricular], [Nota_1], [Nota_2], [Nota_3], [Nota_4], [Nota_5], [Nota_6]
@@ -420,7 +429,7 @@ def generar_reporte_pdf(rut: str):
     """
     df_notas = pd.read_sql(query_notas, conn, params=[rut])
 
-    # 4️⃣ Preparar el HTML con nuevo diseño
+    # 4️⃣ Preparar el HTML con nuevo diseño y recomendaciones
     html_content = f"""
     <html>
     <head>
@@ -459,6 +468,13 @@ def generar_reporte_pdf(rut: str):
         .highlight {{
             font-weight: bold;
         }}
+        .recomendacion {{
+            background-color: #f0f4f8;
+            border-left: 4px solid #1a73e8;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+        }}
     </style>
     </head>
     <body>
@@ -484,6 +500,11 @@ def generar_reporte_pdf(rut: str):
                     <td>{nivel_interseccional}</td>
                 </tr>
             </table>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Recomendación Psicológica</div>
+            <div class="recomendacion">{recomendacion_psico}</div>
         </div>
 
         <div class="section">
