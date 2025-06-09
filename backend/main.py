@@ -285,6 +285,18 @@ def riesgo_global(rut: str):
         nombre_completo = df_basico.iloc[0]['NombreCompleto']
         carrera = df_basico.iloc[0]['Carrera']
 
+    query_recomendaciones = """
+        SELECT Acciones
+        FROM Recomendaciones
+        WHERE TipoRiesgo = ? AND NivelRiesgo = ?
+    """
+    
+    #Recomendaciones para el riesgo psicologico
+    df_recomendacion_psico = pd.read_sql(query_recomendaciones, conn, params=['Psicológico', nivel_p])
+    recomendacion_psico = df_recomendacion_psico.iloc[0]['Acciones'] if not df_recomendacion_psico.empty else "Sin recomendaciones"
+
+    #seccion riesgos academicos
+    recomendacion_academica = "Sin recomendacion"
     # Insertar evaluación en la BD (sin actualizar)
     cursor = conn.cursor()
     query_insert = """
@@ -329,11 +341,24 @@ def riesgo_global(rut: str):
         "carrera": carrera,
         "riesgo_global": riesgo_global,
         "riesgos": {
-            "academico": {"nivel": nivel_a, "puntaje": puntaje_a, "motivo": motivo_a},
-            "psicologico": {"nivel": nivel_p, "puntaje": puntaje_p, "motivos": motivos_p},
-            "interseccional": {"nivel": nivel_i, "puntaje": puntaje_i, "detalle": detalle_i}
+            "academico": {
+                 "nivel": nivel_a, 
+                 "puntaje": puntaje_a, 
+                 "motivo": motivo_a,
+                 "recomendacion": recomendacion_academica
+                 },
+            "psicologico": {
+                "nivel": nivel_p, 
+                "puntaje": puntaje_p, 
+                "motivos": motivos_p,
+                "recomendacion": recomendacion_psico
+                },
+            "interseccional": {
+                "nivel": nivel_i, 
+                "puntaje": puntaje_i, 
+                "detalle": detalle_i
+            }
         },
-
         "factores_psicologicos": factores_psico_data
     }
 
