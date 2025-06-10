@@ -332,6 +332,29 @@ def riesgo_global(rut: str):
             "nombre_profesional": row_factores["nombre_profesional"] or "",
             "observaciones": row_factores["observaciones"] or ""
         }
+    
+    query_factores_academicos = """
+        SELECT esta_recibiendo_apoyo, nombre_profesional, observaciones
+        FROM FactoresAcademicos
+        WHERE rut_estudiante = ?
+    """
+    df_factores_academicos = pd.read_sql(query_factores_academicos, conn, params=[rut])
+
+    # por defecto, campos vacíos
+    factores_academicos_data = {
+        "esta_recibiendo_apoyo": 0,
+        "nombre_profesional": "",
+        "observaciones": ""
+    }
+
+    # si existe registro, actualiza el objeto
+    if not df_factores_academicos.empty:
+        row_academico = df_factores_academicos.iloc[0]
+        factores_academicos_data = {
+            "esta_recibiendo_apoyo": int(row_academico["esta_recibiendo_apoyo"]),
+            "nombre_profesional": row_academico["nombre_profesional"] or "",
+            "observaciones": row_academico["observaciones"] or ""
+        }
 
 
     # ✅ Retornar resultados
@@ -359,7 +382,8 @@ def riesgo_global(rut: str):
                 "detalle": detalle_i
             }
         },
-        "factores_psicologicos": factores_psico_data
+        "factores_psicologicos": factores_psico_data,
+        "factores_academicos": factores_academicos_data
     }
 
 
@@ -581,3 +605,26 @@ async def registrar_factores_psicologicos(request: Request):
     conn.close()
 
     return{"mensaje": "✅ Registro actualizado correctamente"}
+
+@app.post("/registrar_factores_academicos/")
+def registrar_factores_academicos(data: dict):
+    conn = get_connection()
+    cursor = conn.cursor()
+    query = """
+        MERGE INTO FactoresAcademicos AS target
+        USING (SELECT ? AS rut_estudiante) AS source
+        ON target.rut_estudiante = source.rut_estudiante
+        WHEN MATCHED THEN
+            UPDATE SET esta_recibiendo_apoyo = ?, nombre_profesional = ?, observaciones = ?, nivel_riesgo = ?
+        WHEN NOT MATCHED THEN
+            INSERT (rut_estudiante, esta_recibiendo_apoyo, nombre_profesional, observaciones, nivel_riesgo)
+            VALUES (?, ?, ?, ?, ?);
+    """
+
+    cursor.execute(query, (
+        data["rut"], data["esta_apoyo"], data["profesional"], data["observaciones"], data["nivel_riesgo"],
+        data["rut"], data["esta_apoyo"], data["profesional"], data["observaciones"], data["nivel_riesgo"]
+    ))
+    conn.commit()
+    return{"message": "✅ Apoyo académico registrado correctamente"}
+
