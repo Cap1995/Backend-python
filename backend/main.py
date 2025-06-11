@@ -296,7 +296,9 @@ def riesgo_global(rut: str):
     recomendacion_psico = df_recomendacion_psico.iloc[0]['Acciones'] if not df_recomendacion_psico.empty else "Sin recomendaciones"
 
     #seccion riesgos academicos
-    recomendacion_academica = "Sin recomendacion"
+    df_recomendacion_academica = pd.read_sql(query_recomendaciones, conn, params=['Académico', nivel_a])
+    recomendacion_academica = df_recomendacion_academica.iloc[0]['Acciones'] if not df_recomendacion_academica.empty else "Sin recomendación"
+    
     # Insertar evaluación en la BD (sin actualizar)
     cursor = conn.cursor()
     query_insert = """
