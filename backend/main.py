@@ -298,7 +298,7 @@ def riesgo_global(rut: str):
     #seccion riesgos academicos
     df_recomendacion_academica = pd.read_sql(query_recomendaciones, conn, params=['Académico', nivel_a])
     recomendacion_academica = df_recomendacion_academica.iloc[0]['Acciones'] if not df_recomendacion_academica.empty else "Sin recomendación"
-    
+
     # Insertar evaluación en la BD (sin actualizar)
     cursor = conn.cursor()
     query_insert = """
@@ -447,6 +447,15 @@ def generar_reporte_pdf(rut: str):
     df_recomendacion_psico = pd.read_sql(query_recomendacion_psico, conn, params=[nivel_psicologico])
     recomendacion_psico = df_recomendacion_psico.iloc[0]['Acciones'] if not df_recomendacion_psico.empty else "Sin recomendaciones"
 
+    # Recomendacion Académica
+    query_recomendacion_academica = """
+        SELECT Acciones
+        FROM Recomendaciones
+        WHERE TipoRiesgo = 'Académico' AND NivelRiesgo = ?
+    """
+    df_recomendacion_academica = pd.read_sql(query_recomendacion_academica, conn, params=[nivel_academico])
+    recomendacion_academica = df_recomendacion_academica.iloc[0]['Acciones'] if not df_recomendacion_academica.empty else "Sin recomendacion"
+
     # 3️⃣ Notas del estudiante
     query_notas = """
         SELECT [Denominación Actividad Curricular], [Nota_1], [Nota_2], [Nota_3], [Nota_4], [Nota_5], [Nota_6]
@@ -531,6 +540,10 @@ def generar_reporte_pdf(rut: str):
         <div class="section">
             <div class="section-title">Recomendación Psicológica</div>
             <div class="recomendacion">{recomendacion_psico}</div>
+        </div>
+        <div class="section">
+            <div class="section-title">Recomendación Académica</div>
+            <div class="recomendacion">{recomendacion_academica}</div>
         </div>
 
         <div class="section">
